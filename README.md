@@ -1,4 +1,3 @@
-# Phoenix-filter-bot
 <p align="center">
   <img src="https://graph.org/file/a5f6da40168d19a3bedb8.jpg" alt="Phoenix Filter Bot">
 </p>
