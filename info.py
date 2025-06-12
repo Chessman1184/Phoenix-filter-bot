@@ -21,7 +21,7 @@ ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ
 USERNAME = environ.get('USERNAME', "https://telegram.me/ph0enix_web")
 LOG_CHANNEL = int(environ.get('LOG_CHANNEL', '-1002450940556'))
 MOVIE_GROUP_LINK = environ.get('MOVIE_GROUP_LINK', 'https://t.me/+5h6D58vHmxdjMmQ0')
-CHANNELS = [int(ch) if id_pattern.search(ch) else ch for ch in environ.get('CHANNELS', '-1002481176854').split()]
+CHANNELS = [int(ch) if id_pattern.search(ch) else ch for ch in environ.get('CHANNELS', '-1002533961050').split()]
 DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://username:password@cluster0.jhvfd.mongodb.net/?retryWrites=true&w=majority")
 
 DATABASE_NAME = environ.get('DATABASE_NAME', "TELEGRAM_BOT_INFO")
