@@ -42,11 +42,10 @@ sᴇɴᴅ ᴍᴇ ᴀɴʏ ᴍᴏᴠɪᴇ ᴏʀ sᴇʀɪᴇs ɴᴀᴍᴇ ᴀɴᴅ 
 ⚙️ ᴄʜɪʟʟɪɴɢ ᴏɴ : <a href="https://www.heroku.com/">ʜᴇʀᴏᴋᴜ</a>
 🍿 ʙʀᴀɪɴ ғᴜᴇʟᴇᴅ : <a href="https://www.mongodb.com/">ᴍᴏɴɢᴏ ᴅʙ</a>
 🐍 ᴄᴏᴅɪɴɢ ᴍᴜsᴄʟᴇs : <a href="https://www.python.org/">ᴘʏᴛʜᴏɴ 3</a>
-😚 ᴍʏ ᴛʀᴜsᴛʏ sᴛᴇᴇᴅ: <a href="https://github.com/Mayuri-Chan/pyrofork">ᴘʏʀᴏғᴏʀᴋ</a>
-🙏🏻 ᴍʏ ᴄʀᴇᴀᴛᴏʀ : ʟᴏʀᴅ ᴋʀɪsʜɴᴀ
+😚 ᴍʏ ᴛʀᴜsᴛʏ sᴛᴇᴇᴅ: Private 🤫
+🙏🏻 ᴍʏ ᴄʀᴇᴀᴛᴏʀ : @ph0enix_web
 🤡 ᴍʏ ᴍᴀɴᴀɢᴇʀ : <a href="https://telegram.me/ph0enix_web">PHOENIX</a>
-🧑🏻‍💻 ʀᴇᴘᴏ : <a href="https://github.com/Chessman1184/Phoenix-filter-bot">ʟɪɴᴋ</a>
-</b>"""
+🧑🏻‍💻 ʀᴇᴘᴏ : Private 🤫
     SUPPORT_GRP_MOVIE_TEXT = '''<b>ʜᴇʏ {}
 
 ɪ ғᴏᴜɴᴅ {} ʀᴇsᴜʟᴛs 🎁,
