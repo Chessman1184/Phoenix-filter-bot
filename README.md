@@ -80,4 +80,4 @@ Licensed under the [MIT License](https://github.com/biisal/biisal-filter-bot/blo
 
 ---
 
-<h3 align="center">🔥 Jai Shree Krishna 🔥</h3>
+<h3 align="center">🔥 Phoenix 🔥</h3>
