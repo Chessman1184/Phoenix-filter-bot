@@ -76,7 +76,7 @@ This bot is released for **educational purposes only**. Use responsibly. The aut
 
 ## 📄 License
 
-Licensed under the [MIT License](https://github.com/biisal/biisal-filter-bot/blob/main/LICENSE)
+Licensed under the [MIT License](https://github.com/Chessman1184/Phoenix-filter-bot/blob/main/LICENSE)
 
 ---
 
