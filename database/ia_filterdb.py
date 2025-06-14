@@ -1,10 +1,11 @@
 import logging
 from struct import pack
+import re
 import asyncio
 from typing import Dict, List, Union
 from datetime import datetime
 from pymongo.errors import DuplicateKeyError
-from umongo import Instance, Document, fields
+from umongo import MotorAsyncIOInstance, Document, fields
 from motor.motor_asyncio import AsyncIOMotorClient
 from marshmallow.exceptions import ValidationError
 from info import DATABASE_URI, DATABASE_NAME, COLLECTION_NAME
@@ -14,7 +15,7 @@ logger.setLevel(logging.INFO)
 
 client = AsyncIOMotorClient(DATABASE_URI)
 database = client[DATABASE_NAME]
-instance = Instance(database)
+instance = MotorAsyncIOInstance(database)  # Changed from Instance to MotorAsyncIOInstance
 
 @instance.register
 class Media(Document):
@@ -28,6 +29,19 @@ class Media(Document):
     
     class Meta:
         collection_name = COLLECTION_NAME
+        indexes = [
+            {'key': ['file_id'], 'unique': True},
+            {'key': ['file_name'], 'unique': False}
+        ]
+
+    @classmethod
+    async def ensure_indexes(cls):
+        """Create required indexes"""
+        try:
+            await cls.ensure_all_indexes()
+            logger.info("Database indexes created successfully")
+        except Exception as e:
+            logger.error(f"Error creating database indexes: {e}")
 
 async def save_file(media: Media) -> bool:
     """Save file in database"""
