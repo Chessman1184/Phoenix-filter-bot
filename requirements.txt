@@ -3,6 +3,8 @@ tgcrypto
 motor
 dnspython
 pymongo
+umongo
+marshmallow
 aiohttp
 python-dotenv
 pytz
