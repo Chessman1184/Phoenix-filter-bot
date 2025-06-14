@@ -34,6 +34,14 @@ class temp(object):
     GROUPS_CANCEL = False
     CHAT = {}
 
+def format_file_name(file_name: str) -> str:
+    """Format file name by removing unwanted characters"""
+    file_name = ' '.join(filter(
+        lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), 
+        file_name.split()
+    ))
+    return file_name
+
 def get_size(size_in_bytes: int) -> str:
     """Convert size in bytes to human readable format"""
     for unit in ['', 'KB', 'MB', 'GB', 'TB']:
@@ -122,6 +130,7 @@ async def get_poster(query: str, bulk: bool = False, id: bool = False, file: str
         year = ""
         
         # Extract year if present
+        import re
         year_match = re.findall(r'[1-2]\d{3}$', query, re.IGNORECASE)
         if year_match:
             year = year_match[0]
