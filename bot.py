@@ -6,6 +6,7 @@ from aiohttp import web
 from typing import Union, Optional, AsyncGenerator
 from pyrogram import Client, __version__, types
 from pyrogram.enums import ChatMemberStatus
+from pyrogram.errors import FloodWait
 from database.ia_filterdb import Media
 from database.users_chats_db import db
 from info import (
@@ -46,8 +47,13 @@ class Bot(Client):
             temp.BANNED_USERS = banned_users
             temp.BANNED_CHATS = banned_chats
             
-            # Start the client
-            await super().start()
+            # Start the client with flood wait handling
+            try:
+                await super().start()
+            except FloodWait as e:
+                logger.warning(f"FloodWait: Sleeping for {e.value} seconds")
+                await asyncio.sleep(e.value)
+                await super().start()
             
             # Initialize database indexes
             await Media.ensure_indexes()
@@ -83,21 +89,27 @@ class Bot(Client):
                 f"Took: {time_taken}</b>"
             )
             
-            # Send startup notifications
-            await self.send_message(LOG_CHANNEL, start_log)
-            for admin in ADMINS:
-                try:
-                    await self.send_message(
-                        chat_id=admin,
-                        text=f"<b>Bot Restarted! ✨\nTook: {time_taken}</b>"
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to send startup message to admin {admin}: {e}")
-                    
+            # Send startup notifications with flood wait handling
+            try:
+                await self.send_message(LOG_CHANNEL, start_log)
+                for admin in ADMINS:
+                    try:
+                        await self.send_message(
+                            chat_id=admin,
+                            text=f"<b>Bot Restarted! ✨\nTook: {time_taken}</b>"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to send startup message to admin {admin}: {e}")
+            except FloodWait as e:
+                logger.warning(f"FloodWait in startup notification: Sleeping for {e.value} seconds")
+                await asyncio.sleep(e.value)
+                
             logger.info(f"Bot Started as {me.first_name}")
             
         except Exception as e:
             logger.error(f"Error starting bot: {e}", exc_info=True)
+            # Sleep for a while before exiting to prevent immediate restarts
+            await asyncio.sleep(10)
             exit(1)
             
     async def stop(self, *args):
@@ -123,15 +135,28 @@ class Bot(Client):
             if new_diff <= 0:
                 return
             
-            messages = await self.get_messages(
-                chat_id, 
-                list(range(current, current + new_diff + 1))
-            )
-            
+            try:
+                messages = await self.get_messages(
+                    chat_id, 
+                    list(range(current, current + new_diff + 1))
+                )
+            except FloodWait as e:
+                logger.warning(f"FloodWait in iter_messages: Sleeping for {e.value} seconds")
+                await asyncio.sleep(e.value)
+                continue
+                
             for message in messages:
                 yield message
                 current += 1
 
 if __name__ == "__main__":
-    app = Bot()
-    app.run()
+    while True:
+        try:
+            app = Bot()
+            app.run()
+        except FloodWait as e:
+            logger.warning(f"Main FloodWait: Sleeping for {e.value} seconds")
+            asyncio.sleep(e.value)
+        except Exception as e:
+            logger.error(f"Main loop error: {e}", exc_info=True)
+            asyncio.sleep(10)  # Sleep before retrying
