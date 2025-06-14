@@ -2,6 +2,7 @@ import logging
 import asyncio
 from datetime import datetime, date
 import pytz
+import os
 from aiohttp import web
 from typing import Union, Optional, AsyncGenerator
 from pyrogram import Client, __version__, types
@@ -11,7 +12,9 @@ from database.ia_filterdb import Media
 from database.users_chats_db import db
 from info import (
     API_ID, API_HASH, BOT_TOKEN, PORT, ADMINS,
-    LOG_CHANNEL, SUPPORT_GROUP
+    LOG_CHANNEL, SUPPORT_GROUP, AUTH_CHANNEL,
+    CHANNELS, DELETE_CHANNELS, LOG_API_CHANNEL,
+    MOVIE_UPDATE_CHANNEL, REQUEST_CHANNEL
 )
 from utils import temp, get_readable_time
 from plugins import web_server, check_expired_premium
@@ -26,8 +29,9 @@ logger = logging.getLogger(__name__)
 
 class Bot(Client):
     def __init__(self):
+        name = self.get_session_name()
         super().__init__(
-            name="phoenix-filter-bot",
+            name=name,
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
@@ -36,6 +40,25 @@ class Bot(Client):
             sleep_threshold=10,
         )
         self.username = None
+
+    def get_session_name(self):
+        """Get or create a session name"""
+        base_name = "phoenix-filter-bot"
+        session_dir = "sessions"
+        
+        if not os.path.exists(session_dir):
+            os.makedirs(session_dir)
+            
+        sessions = [f for f in os.listdir(session_dir) if f.startswith(base_name)]
+        if not sessions:
+            return os.path.join(session_dir, base_name)
+            
+        # Use existing session or create new one
+        latest_session = max(sessions)
+        if os.path.getsize(os.path.join(session_dir, latest_session)) > 0:
+            num = int(latest_session.split('.')[-1]) if '.' in latest_session else 0
+            return os.path.join(session_dir, f"{base_name}.{num + 1}")
+        return os.path.join(session_dir, latest_session)
         
     async def start(self):
         """Start the bot and initialize required variables"""
@@ -52,6 +75,9 @@ class Bot(Client):
                 await super().start()
             except FloodWait as e:
                 logger.warning(f"FloodWait: Sleeping for {e.value} seconds")
+                # Create a marker file for the flood wait
+                with open(os.path.join("sessions", "flood_wait.txt"), "w") as f:
+                    f.write(f"{e.value}")
                 await asyncio.sleep(e.value)
                 await super().start()
             
@@ -80,23 +106,32 @@ class Bot(Client):
             now = datetime.now(tz)
             time_taken = get_readable_time((datetime.now() - start_time).seconds)
             
+            # Remove flood wait marker if exists
+            flood_wait_file = os.path.join("sessions", "flood_wait.txt")
+            if os.path.exists(flood_wait_file):
+                os.remove(flood_wait_file)
+            
             start_log = (
                 f"<b>Bot Started Successfully ✅\n\n"
                 f"Bot: {me.mention}\n"
                 f"Date: {today}\n"
                 f"Time: {now.strftime('%I:%M:%S %p')}\n"
                 f"Timezone: Asia/Kolkata\n"
+                f"Session: {self._name}\n"
                 f"Took: {time_taken}</b>"
             )
             
             # Send startup notifications with flood wait handling
             try:
                 await self.send_message(LOG_CHANNEL, start_log)
-                for admin in ADMINS:
+                await self.send_message(LOG_API_CHANNEL, 
+                    f"#BOT_START\n\nBot started with session: {self._name}")
+                
+                for admin in str(ADMINS).split():
                     try:
                         await self.send_message(
-                            chat_id=admin,
-                            text=f"<b>Bot Restarted! ✨\nTook: {time_taken}</b>"
+                            chat_id=int(admin),
+                            text=f"<b>Bot Restarted! ✨\nSession: {self._name}\nTook: {time_taken}</b>"
                         )
                     except Exception as e:
                         logger.error(f"Failed to send startup message to admin {admin}: {e}")
@@ -104,11 +139,10 @@ class Bot(Client):
                 logger.warning(f"FloodWait in startup notification: Sleeping for {e.value} seconds")
                 await asyncio.sleep(e.value)
                 
-            logger.info(f"Bot Started as {me.first_name}")
+            logger.info(f"Bot Started as {me.first_name} with session {self._name}")
             
         except Exception as e:
             logger.error(f"Error starting bot: {e}", exc_info=True)
-            # Sleep for a while before exiting to prevent immediate restarts
             await asyncio.sleep(10)
             exit(1)
             
@@ -119,35 +153,6 @@ class Bot(Client):
             logger.info("Bot stopped. Bye!")
         except Exception as e:
             logger.error(f"Error stopping bot: {e}", exc_info=True)
-            
-    async def iter_messages(
-        self,
-        chat_id: Union[int, str],
-        limit: int,
-        offset: int = 0
-    ) -> Optional[AsyncGenerator["types.Message", None]]:
-        """
-        Iterate through messages in a chat
-        """
-        current = offset
-        while True:
-            new_diff = min(200, limit - current)
-            if new_diff <= 0:
-                return
-            
-            try:
-                messages = await self.get_messages(
-                    chat_id, 
-                    list(range(current, current + new_diff + 1))
-                )
-            except FloodWait as e:
-                logger.warning(f"FloodWait in iter_messages: Sleeping for {e.value} seconds")
-                await asyncio.sleep(e.value)
-                continue
-                
-            for message in messages:
-                yield message
-                current += 1
 
 if __name__ == "__main__":
     while True:
@@ -156,7 +161,10 @@ if __name__ == "__main__":
             app.run()
         except FloodWait as e:
             logger.warning(f"Main FloodWait: Sleeping for {e.value} seconds")
+            # Create a marker file for the flood wait
+            with open(os.path.join("sessions", "flood_wait.txt"), "w") as f:
+                f.write(f"{e.value}")
             asyncio.sleep(e.value)
         except Exception as e:
             logger.error(f"Main loop error: {e}", exc_info=True)
-            asyncio.sleep(10)  # Sleep before retrying
+            asyncio.sleep(10)
