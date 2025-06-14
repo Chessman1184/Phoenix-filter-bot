@@ -1,12 +1,16 @@
 import logging
 import aiohttp
 import asyncio
+import re
 import pytz
 from datetime import datetime
-from typing import Union, List, Optional
+from typing import Union, List, Optional, AsyncGenerator
 from imdb import Cinemagoer
 from pyrogram.types import Message
-from pyrogram.errors import UserNotParticipant, FloodWait
+from pyrogram.errors import (
+    FloodWait, InputUserDeactivated, UserIsBlocked,
+    PeerIdInvalid, UserNotParticipant
+)
 from pyrogram import enums
 from info import (
     SETTINGS, AUTH_CHANNEL, LONG_IMDB_DESCRIPTION, 
@@ -124,13 +128,10 @@ def list_to_str(lst: List[str]) -> str:
 async def get_poster(query: str, bulk: bool = False, id: bool = False, file: str = None) -> Optional[dict]:
     """Get movie/TV show poster and details from IMDb"""
     if not id:
-        # Clean and prepare the search query
         query = query.strip().lower()
         title = query
         year = ""
         
-        # Extract year if present
-        import re
         year_match = re.findall(r'[1-2]\d{3}$', query, re.IGNORECASE)
         if year_match:
             year = year_match[0]
@@ -145,7 +146,6 @@ async def get_poster(query: str, bulk: bool = False, id: bool = False, file: str
             if not movies:
                 return None
 
-            # Filter results
             if year:
                 movies = [movie for movie in movies if str(movie.get('year')) == str(year)]
             movies = [movie for movie in movies if movie.get('kind') in ['movie', 'tv series']]
@@ -213,3 +213,75 @@ async def broadcast_messages(user_id: int, message: Message, pin: bool = False) 
     except Exception as e:
         logger.error(f"Broadcast error: {e}")
         return False, "Error"
+
+async def users_broadcast(client, message, user_ids, pin_message: bool = False) -> str:
+    """Broadcast message to multiple users"""
+    total = len(user_ids)
+    done = 0
+    blocked = 0
+    deleted = 0
+    failed = 0
+    
+    success_msg = ""
+    async for user_id in user_ids:
+        try:
+            await message.copy(chat_id=user_id)
+            done += 1
+            if pin_message:
+                try:
+                    await client.pin_chat_message(user_id, message.id)
+                except:
+                    pass
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+            await message.copy(chat_id=user_id)
+            done += 1
+        except UserIsBlocked:
+            blocked += 1
+        except InputUserDeactivated:
+            deleted += 1
+        except Exception:
+            failed += 1
+            
+        await asyncio.sleep(0.1)
+        
+    success_msg = f"""Broadcast completed! 
+Total users: {total}
+Successful: {done}
+Blocked users: {blocked}
+Deleted accounts: {deleted}
+Failed: {failed}"""
+
+    return success_msg
+
+async def groups_broadcast(client, message, chat_ids, pin_message: bool = False) -> str:
+    """Broadcast message to multiple groups"""
+    total = len(chat_ids)
+    done = 0
+    failed = 0
+    
+    success_msg = ""
+    async for chat_id in chat_ids:
+        try:
+            await message.copy(chat_id=chat_id)
+            done += 1
+            if pin_message:
+                try:
+                    await client.pin_chat_message(chat_id, message.id)
+                except:
+                    pass
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+            await message.copy(chat_id=chat_id)
+            done += 1
+        except Exception:
+            failed += 1
+            
+        await asyncio.sleep(0.1)
+        
+    success_msg = f"""Group broadcast completed!
+Total groups: {total}
+Successful: {done}
+Failed: {failed}"""
+
+    return success_msg
