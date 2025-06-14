@@ -3,7 +3,7 @@ import asyncio
 from pyrogram import Client
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from database.ia_filterdb import Media, get_file_details
-from utils import get_size, temp, get_settings, formate_file_name
+from utils import get_size, temp, get_settings, format_file_name
 from info import AUTH_CHANNEL, FILE_AUTO_DEL_TIMER
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ async def handle_file_request(client: Client, message: Message, file_id: str, gr
         
         # Format caption
         f_caption = CAPTION.format(
-            file_name=formate_file_name(files.file_name),
+            file_name=format_file_name(files.file_name),
             file_size=get_size(files.file_size),
             file_caption=files.caption if hasattr(files, 'caption') else ''
         )
